@@ -59,7 +59,6 @@ def buildings_with_address_in_1km_and_plot(name, latitude, longitude):
     ax.set_ylabel("latitude")
 
     # Plot buildings with addresses in green
-    buildings_with_address = pois.dropna(subset=['addr:housenumber', 'addr:street', 'addr:postcode'])
     buildings_with_address.plot(ax=ax, color="black", alpha=1, markersize=10, label="With Address")
 
     # Plot buildings without addresses in red
@@ -81,7 +80,7 @@ def match_price_paid_with_buildings(conn, latitude, longitude, buildings_with_ad
 
     cur = conn.cursor()
     print('Selecting joined data')
-    cur.execute("SELECT * FROM pp_data AS pp INNER JOIN postcode_data AS po ON pp.postcode = po.postcode WHERE latitude BETWEEN " + str(lat_min) + " AND " + str(lat_max) + " AND longitude BETWEEN " + str(lon_min) + " AND " + str(lon_max) + " AND date_of_transfer >= '2020-01-01';")
+    cur.execute("SELECT * FROM prices_coordinates_data WHERE latitude BETWEEN " + str(lat_min) + " AND " + str(lat_max) + " AND longitude BETWEEN " + str(lon_min) + " AND " + str(lon_max) + " AND date_of_transfer >= '2020-01-01';")
     rows = cur.fetchall()
     print('Finished selecting', rows)
     # Replace placeholders with actual lat/lon values for the SQL execution

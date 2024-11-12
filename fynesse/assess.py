@@ -84,9 +84,9 @@ def match_price_paid_with_buildings(conn, latitude, longitude, buildings_with_ad
     rows = cur.fetchall()
     print('Finished selecting', rows)
     # Replace placeholders with actual lat/lon values for the SQL execution
-    
+    columns = [desc[0] for desc in cur.description]
     # Step 2: Convert result into a pandas DataFrame and remove duplicates
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows, columns=columns)
     df = df.loc[:, ~df.columns.duplicated()]
     buildings_with_address['normalized_address'] =  buildings_with_address['addr:street'].str.strip().str.lower() + ' ' + \
                                buildings_with_address['addr:postcode'].str.strip().str.lower()

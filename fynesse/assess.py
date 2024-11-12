@@ -79,11 +79,8 @@ def match_price_paid_with_buildings(conn, latitude, longitude, buildings_with_ad
     lat_min, lat_max = latitude - 0.009, latitude + 0.009
     lon_min, lon_max = longitude - 0.015, longitude + 0.015
 
-    query = f"""
-USE `ads_2024`;
-SELECT * FROM pp_data AS pp INNER JOIN postcode_data AS po ON pp.postcode = po.postcode WHERE latitude BETWEEN {lat_min} AND {lat_max} AND longitude BETWEEN {lon_min} AND {lon_max} AND date_of_transfer >= '2020-01-01'; """
     cur = conn.cursor()
-    cur.execute(query)
+    cur.execute("SELECT * FROM pp_data AS pp INNER JOIN postcode_data AS po ON pp.postcode = po.postcode WHERE latitude BETWEEN " + str(lat_min) + " AND " + str(lat_max) + " AND longitude BETWEEN " + str(lon_min) + " AND " + str(lon_max) + " AND date_of_transfer >= '2020-01-01';")
     rows = cur.fetchall()
     # Replace placeholders with actual lat/lon values for the SQL execution
     

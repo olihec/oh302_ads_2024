@@ -57,20 +57,18 @@ def download_2021_census_data(code, base_dir=''):
 
 def download_oa_coordinates(base_dir=''):
     url = "https://open-geography-portalx-ons.hub.arcgis.com/api/download/v1/items/6beafcfd9b9c4c9993a06b6b199d7e6d/csv?layers=0"
-    file_dir = os.path.join(base_dir, os.path.splitext(os.path.basename(url))[0])
+    file_name = 'oa_geographies'
 
-    if os.path.exists(file_dir) and os.listdir(file_dir):
-        print(f"Files already exist at: {file_dir}.")
-        return
+    if os.path.exists(file_name):
+        print(f"Files already exist : {file_name}.")
 
-    os.makedirs(file_dir, exist_ok=True)
     response = requests.get(url)
     response.raise_for_status()
 
-    with open(file_dir, "wb") as f:  
-       f.write(response.content)
+    with open(file_name, "wb") as f:  
+        f.write(response.content)
 
-    print(f"Files extracted to: {file_dir}")
+    print(f"Files extracted to: {file_name}")
 
 
 def create_connection(user, password, host, database, port=3306):

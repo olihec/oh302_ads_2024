@@ -2,6 +2,8 @@ from .config import *
 import requests
 import pymysql
 import csv
+import zipfile
+import io
 
 """These are the types of import we might expect in this file
 import httplib2
@@ -35,6 +37,23 @@ def download_price_paid_data(year_from, year_to):
             if response.status_code == 200:
                 with open("." + file_name.replace("<year>", str(year)).replace("<part>", str(part)), "wb") as file:
                     file.write(response.content)
+
+def download_2021_census_data(code, base_dir=''):
+  url = f'https://www.nomisweb.co.uk/output/census/2021/census2021-{code.lower()}.zip'
+  extract_dir = os.path.join(base_dir, os.path.splitext(os.path.basename(url))[0])
+
+  if os.path.exists(extract_dir) and os.listdir(extract_dir):
+    print(f"Files already exist at: {extract_dir}.")
+    return
+
+  os.makedirs(extract_dir, exist_ok=True)
+  response = requests.get(url)
+  response.raise_for_status()
+
+  with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
+    zip_ref.extractall(extract_dir)
+
+  print(f"Files extracted to: {extract_dir}")
 
 def create_connection(user, password, host, database, port=3306):
     """ Create a database connection to the MariaDB database

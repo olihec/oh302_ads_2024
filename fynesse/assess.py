@@ -159,12 +159,13 @@ def get_osm_features_from_codes(connection, oa_codes):
                     (center_lon - lon_offset, center_lat + lat_offset)]
 
         square_polygon = Polygon(vertices)
+        try:
+            new_osm_features = ox.features_from_polygon(square_polygon, tags={'amenity': True, 'building': True})
+            new_osm_features['OA21CD'] = oa_code
 
-        new_osm_features = ox.features_from_polygon(square_polygon, tags={'amenity': True, 'building': True})
-        new_osm_features['OA21CD'] = oa_code
-
-        osm_features_df = pd.concat([osm_features_df, new_osm_features], ignore_index=True)
-
+            osm_features_df = pd.concat([osm_features_df, new_osm_features], ignore_index=True)
+        except ox.InsufficientResponseError:
+            pass
     
     return osm_features_df
 

@@ -134,14 +134,13 @@ def plot_price_to_area(data):
 
 def get_osm_features_from_codes(connection, oa_codes):
 
-    oa_data = pd.read_sql("SELECT `OA21CD`, `LAT`, `LONG`, `Shape__Area` FROM oa_geographies_data", connection)
-    osm_features_df = pd.DataFrame()
-
-    filtered_oa_data = oa_data[oa_data['OA21CD'].isin(oa_codes)]
+    oa_codes_str = ','.join([f"'{code}'" for code in oa_codes])  # Format codes for SQL query
+    query = f"SELECT `OA21CD`, `LAT`, `LONG`, `Shape__Area` FROM oa_geographies_data WHERE `OA21CD` IN ({oa_codes_str})"
+    oa_data = pd.read_sql(query, connection)
 
     dist_per_degree_lat = 111.1  # Approximate km per degree latitude
 
-    for _, row in filtered_oa_data.iterrows():
+    for _, row in oa_data.iterrows():
         oa_code = row['OA21CD']
         center_lat = row['LAT']
         center_lon = row['LONG']

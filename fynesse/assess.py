@@ -160,12 +160,13 @@ def get_osm_features_from_codes(connection, oa_codes):
 
         square_polygon = Polygon(vertices)
         try:
+
             new_osm_features = ox.features_from_polygon(square_polygon, tags={'amenity': True, 'building': True})
             new_osm_features['OA21CD'] = oa_code
 
             osm_features_df = pd.concat([osm_features_df, new_osm_features], ignore_index=True)
-        except ox.InsufficientResponseError:
-            pass
+        except ox._errors.InsufficientResponseError:
+            print(f"Warning: No OSM features found for OA code '{oa_code}'. Skipping.")
     
     return osm_features_df
 

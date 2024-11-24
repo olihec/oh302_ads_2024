@@ -6,6 +6,7 @@ from shapely.geometry import Polygon, MultiPolygon
 import osmnx as ox
 import matplotlib.pyplot as plt
 import seaborn as sns
+import math
 
 """These are the types of import we might expect in this file
 import pandas
@@ -130,6 +131,42 @@ def plot_price_to_area(data):
     # Calculate the correlation coefficient between 'price' and 'area_sqm'
     correlation = data['price'].corr(data['area_sqm'])
     print(f"Correlation between Price and Area: {correlation:.2f}")
+
+def get_osm_features_from_codes(connection, oa_codes):
+
+    oa_data = pd.read_sql("SELECT `OA21CD`, `LAT`, `LONG`, `Shape__Area` FROM oa_geographies_data", connection)
+    osm_features_df = pd.DataFrame()
+
+    filtered_oa_data = oa_data[oa_data['OA21CD'].isin(oa_codes)]
+
+    dist_per_degree_lat = 111.1  # Approximate km per degree latitude
+
+    for _, row in filtered_oa_data.iterrows():
+        oa_code = row['OA21CD']
+        center_lat = row['LAT']
+        center_lon = row['LONG']
+        area_m2 = row['Shape__Area']
+
+        area_km2 = area_m2 / 1000000
+        side_length = math.sqrt(area_km2)
+
+        lat_offset = side_length / (2 * dist_per_degree_lat)
+        lon_offset = side_length / (2 * (dist_per_degree_lat * math.cos(math.radians(center_lat))))
+
+        vertices = [(center_lon - lon_offset, center_lat - lat_offset),
+                    (center_lon + lon_offset, center_lat - lat_offset),
+                    (center_lon + lon_offset, center_lat + lat_offset),
+                    (center_lon - lon_offset, center_lat + lat_offset)]
+
+        square_polygon = Polygon(vertices)
+
+        new_osm_features = ox.features_from_polygon(square_polygon, tags={'amenity': True, 'building': True})
+        new_osm_features['OA21CD'] = oa_code
+
+        osm_features = pd.concat([osm_features, new_osm_features], ignore_index=True)
+
+    
+    return osm_features_df
 
 
 def data():

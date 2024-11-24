@@ -138,6 +138,8 @@ def get_osm_features_from_codes(connection, oa_codes):
     query = f"SELECT `OA21CD`, `LAT`, `LONG`, `Shape__Area` FROM oa_geographies_data WHERE `OA21CD` IN ({oa_codes_str})"
     oa_data = pd.read_sql(query, connection)
 
+    osm_features_df = pd.DataFrame()
+
     dist_per_degree_lat = 111.1  # Approximate km per degree latitude
 
     for _, row in oa_data.iterrows():

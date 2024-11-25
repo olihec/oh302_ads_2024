@@ -171,6 +171,27 @@ def get_osm_features_from_codes(connection, oa_codes):
     
     return osm_features_df
 
+def count_osm_features_by_oa(osm_features, tags):
+    
+    all_counts = []
+    for oa_code in osm_features['OA21CD'].unique():
+        oa_features = osm_features[osm_features['OA21CD'] == oa_code]
+        tag_counts = {'OA21CD': oa_code}
+        for tag in tags:
+            if tags[tag] == True:
+                if tag in oa_features.columns:
+                    tag_counts[tag] = oa_features[tag].notnull().sum()
+                else:
+                    tag_counts[tag] = 0
+            else:
+                specific_tags = tags[tag]
+                for specific_tag in specific_tags:
+                    if tag in oa_features.columns:
+                        tag_counts[specific_tag] = oa_features[oa_features[tag] == specific_tag].shape[0]
+                    else:
+                        tag_counts[specific_tag] = 0
+        all_counts.append(tag_counts)
+    return pd.DataFrame(all_counts).set_index('OA21CD')
 
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""

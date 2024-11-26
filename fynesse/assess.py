@@ -251,6 +251,23 @@ def count_osm_features_by_oa(osm_features, tags):
         all_counts.append(tag_counts)
     return pd.DataFrame(all_counts).set_index('OA21CD')
 
+def count_osm_features(osm_features, tags):
+    tag_counts = {}
+    for tag in tags:
+        if tags[tag] == True:
+            if tag in osm_features.columns:
+                tag_counts[tag] = osm_features[tag].notnull().sum()
+            else:
+                tag_counts[tag] = 0
+        else:
+            specific_tags = tags[tag]
+            for specific_tag in specific_tags:
+                if tag in osm_features.columns:
+                    tag_counts[specific_tag] = osm_features[osm_features[tag] == specific_tag].shape[0]
+                else:
+                    tag_counts[specific_tag] = 0
+    return tag_counts
+
 def get_columns_with_most_values(df, n):
     non_nan_counts = df.count() #move this to fynesse
 

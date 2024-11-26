@@ -171,8 +171,45 @@ def get_osm_features_from_codes(connection, oa_codes):
     
     return osm_features_df
 
+def get_osm_features_in_1km(connection, oa_codes):
+    oa_codes_str = ','.join([f"'{code}'" for code in oa_codes])  # Format codes for SQL query
+    query = f"SELECT `OA21CD`, `LAT`, `LONG`, `Shape__Area` FROM oa_geographies_data WHERE `OA21CD` IN ({oa_codes_str})"
+    oa_data = pd.read_sql(query, connection)
+
+    osm_features_df = pd.DataFrame()
+
+    dist_per_degree_lat = 111.1  # Approximate km per degree latitude
+
+    for _, row in oa_data.iterrows():
+        oa_code = row['OA21CD']
+        center_lat = row['LAT']
+        center_lon = row['LONG']
+
+        area_km2 = 4 #4km to get sided of 2 km each, do edge is 1 km away from center
+        side_length = math.sqrt(area_km2)
+
+        lat_offset = side_length / (2 * dist_per_degree_lat)
+        lon_offset = side_length / (2 * (dist_per_degree_lat * math.cos(math.radians(center_lat))))
+
+        vertices = [(center_lon - lon_offset, center_lat - lat_offset),
+                    (center_lon + lon_offset, center_lat - lat_offset),
+                    (center_lon + lon_offset, center_lat + lat_offset),
+                    (center_lon - lon_offset, center_lat + lat_offset)]
+
+        square_polygon = Polygon(vertices)
+        try:
+
+            new_osm_features = ox.features_from_polygon(square_polygon, tags={'amenity': True, 'building': True})
+            new_osm_features['OA21CD'] = oa_code
+
+            osm_features_df = pd.concat([osm_features_df, new_osm_features], ignore_index=True)
+        except ox._errors.InsufficientResponseError:
+            print(f"Warning: No OSM features found for OA code '{oa_code}'. Skipping.")
+
+    return osm_features_df
+
 def count_osm_features_by_oa(osm_features, tags):
-    
+
     all_counts = []
     for oa_code in osm_features['OA21CD'].unique():
         oa_features = osm_features[osm_features['OA21CD'] == oa_code]
@@ -192,6 +229,30 @@ def count_osm_features_by_oa(osm_features, tags):
                         tag_counts[specific_tag] = 0
         all_counts.append(tag_counts)
     return pd.DataFrame(all_counts).set_index('OA21CD')
+
+def get_columns_with_most_values(df, n):
+    non_nan_counts = df.count() #move this to fynesse
+
+    # Sort columns by non-NaN counts in descending order
+    sorted_columns = non_nan_counts.sort_values(ascending=False)
+
+    # Select the top columns
+    return sorted_columns.head(n).index
+  
+def plot_value_counts(df, columns):
+    for column in columns:
+        value_counts = df[column].value_counts()
+
+        
+        # Create the plot
+        plt.figure(figsize=(10, 6))  
+        sns.barplot(x=value_counts.index, y=value_counts.values)
+        plt.title(f'Number of Different {column.capitalize()} Values')
+        plt.xlabel(column.capitalize())
+        plt.ylabel('Count')
+        plt.xticks(rotation=90) 
+        plt.tight_layout()
+        plt.show()
 
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""

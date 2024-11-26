@@ -132,7 +132,28 @@ def plot_price_to_area(data):
     correlation = data['price'].corr(data['area_sqm'])
     print(f"Correlation between Price and Area: {correlation:.2f}")
 
-def get_osm_features_from_codes(connection, oa_codes):
+def get_osm_features_from_location_within_1km(center_lat, center_lon, tags):
+    dist_per_degree_lat = 111.1  # Approximate km per degree latitude
+    area_km2 = 4
+    side_length = math.sqrt(area_km2)
+
+    lat_offset = side_length / (2 * dist_per_degree_lat)
+    lon_offset = side_length / (2 * (dist_per_degree_lat * math.cos(math.radians(center_lat))))
+
+    vertices = [(center_lon - lon_offset, center_lat - lat_offset),
+                (center_lon + lon_offset, center_lat - lat_offset),
+                (center_lon + lon_offset, center_lat + lat_offset),
+                (center_lon - lon_offset, center_lat + lat_offset)]
+
+    square_polygon = Polygon(vertices)
+
+    osm_features = ox.features_from_polygon(square_polygon, tags)
+
+
+
+    return osm_features
+
+def get_osm_features_from_codes(connection, oa_codes, tags):
 
     oa_codes_str = ','.join([f"'{code}'" for code in oa_codes])  # Format codes for SQL query
     query = f"SELECT `OA21CD`, `LAT`, `LONG`, `Shape__Area` FROM oa_geographies_data WHERE `OA21CD` IN ({oa_codes_str})"
@@ -162,7 +183,7 @@ def get_osm_features_from_codes(connection, oa_codes):
         square_polygon = Polygon(vertices)
         try:
 
-            new_osm_features = ox.features_from_polygon(square_polygon, tags={'amenity': True, 'building': True})
+            new_osm_features = ox.features_from_polygon(square_polygon, tags)
             new_osm_features['OA21CD'] = oa_code
 
             osm_features_df = pd.concat([osm_features_df, new_osm_features], ignore_index=True)
@@ -171,7 +192,7 @@ def get_osm_features_from_codes(connection, oa_codes):
     
     return osm_features_df
 
-def get_osm_features_in_1km(connection, oa_codes):
+def get_osm_features_in_1km(connection, oa_codes, tags):
     oa_codes_str = ','.join([f"'{code}'" for code in oa_codes])  # Format codes for SQL query
     query = f"SELECT `OA21CD`, `LAT`, `LONG`, `Shape__Area` FROM oa_geographies_data WHERE `OA21CD` IN ({oa_codes_str})"
     oa_data = pd.read_sql(query, connection)
@@ -199,7 +220,7 @@ def get_osm_features_in_1km(connection, oa_codes):
         square_polygon = Polygon(vertices)
         try:
 
-            new_osm_features = ox.features_from_polygon(square_polygon, tags={'amenity': True, 'building': True})
+            new_osm_features = ox.features_from_polygon(square_polygon, tags)
             new_osm_features['OA21CD'] = oa_code
 
             osm_features_df = pd.concat([osm_features_df, new_osm_features], ignore_index=True)

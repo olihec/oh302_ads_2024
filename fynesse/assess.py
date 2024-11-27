@@ -150,8 +150,11 @@ def get_osm_features_from_location_within_1km(center_lat, center_lon, tags):
     osm_features = ox.features_from_polygon(square_polygon, tags)
 
 
-
-    return osm_features
+    osm_features.notna().sum(axis=1)
+    filtered_features = osm_features[osm_features.notna().sum(axis=1) >= 5]
+    filtered_features
+    
+    return filtered_features
 
 def get_osm_features_from_codes(connection, oa_codes, tags):
 
@@ -190,7 +193,11 @@ def get_osm_features_from_codes(connection, oa_codes, tags):
         except ox._errors.InsufficientResponseError:
             print(f"Warning: No OSM features found for OA code '{oa_code}'. Skipping.")
     
-    return osm_features_df
+    osm_features_df.notna().sum(axis=1)
+    filtered_features = osm_features_df[osm_features_df.notna().sum(axis=1) >= 5]
+    filtered_features
+    
+    return filtered_features
 
 def get_osm_features_in_1km(connection, oa_codes, tags):
     oa_codes_str = ','.join([f"'{code}'" for code in oa_codes])  # Format codes for SQL query
@@ -227,7 +234,11 @@ def get_osm_features_in_1km(connection, oa_codes, tags):
         except ox._errors.InsufficientResponseError:
             print(f"Warning: No OSM features found for OA code '{oa_code}'. Skipping.")
 
-    return osm_features_df
+    osm_features_df.notna().sum(axis=1)
+    filtered_features = osm_features_df[osm_features_df.notna().sum(axis=1) >= 5]
+    filtered_features
+    
+    return filtered_features
 
 def count_osm_features_by_oa(osm_features, tags):
 

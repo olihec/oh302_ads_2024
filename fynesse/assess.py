@@ -317,7 +317,7 @@ def get_osm_nodes_from_location_with_sql(conn, center_lat, center_lon, tags_list
         lat BETWEEN {center_lat - lat_offset} AND {center_lat + lat_offset}
         AND `long` BETWEEN {center_lon - lon_offset} AND {center_lon + lon_offset}
         AND (
-        { ' OR tags LIKE '.join(["tags LIKE '%" + key + "%'" for key in tags_list]) }
+        { ' OR '.join(["tags LIKE '%" + key + "%'" for key in tags_list]) }
     )
     """
     # Execute the query and store the result in a DataFrame

@@ -303,6 +303,55 @@ def plot_value_counts(df, columns):
         plt.tight_layout()
         plt.show()
 
+def get_osm_nodes_from_location_with_sql(conn, center_lat, center_lon, tags_list, distance_km=1):
+
+    dist_per_degree_lat = 111.1  # Approximate km per degree latitude
+
+    lat_offset = distance_km / dist_per_degree_lat
+    lon_offset = distance_km / (dist_per_degree_lat * math.cos(math.radians(center_lat)))
+
+    query = f"""
+    SELECT *
+    FROM osm_nodes 
+    WHERE
+        lat BETWEEN {center_lat - lat_offset} AND {center_lat + lat_offset}
+        AND `long` BETWEEN {center_lon - lon_offset} AND {center_lon + lon_offset}
+        AND (
+        { ' OR tags LIKE '.join(["tags LIKE '%" + key + "%'" for key in tags_list]) }
+    )
+    """
+    # Execute the query and store the result in a DataFrame
+    osm_features = pd.read_sql(query, conn)
+    return osm_features
+
+def get_lat_lon_bounds_with_sql(conn, distance_km):
+    """
+    Calculates latitude and longitude bounds using SQL based on center coordinates in the database.
+
+    Args:
+        conn: Database connection object.
+        location_id (str or int): Identifier for the location in the database.
+        distance_km (float): Distance in kilometers.
+
+    Returns:
+        tuple: A tuple containing the minimum and maximum latitude and longitude values
+               (min_lat, max_lat, min_lon, max_lon).
+    """
+    query = f"""
+    SELECT
+        geography,
+        avg_latitude - ({distance_km} / 111.32) AS min_lat,
+        avg_latitude + ({distance_km} / 111.32) AS max_lat,
+        avg_longitude - ({distance_km} / (111.32 * COS(RADIANS(avg_latitude)))) AS min_lon,
+        avg_longitude + ({distance_km} / (111.32 * COS(RADIANS(avg_latitude)))) AS max_lon
+    FROM
+        density_change_data
+    WHERE
+        avg_latitude IS NOT NULL AND avg_longitude IS NOT NULL
+    """
+    result = pd.read_sql(query, conn)  # Execute the query and get the result
+    return result
+
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
     df = access.data()

@@ -325,18 +325,7 @@ def get_osm_nodes_from_location_with_sql(conn, center_lat, center_lon, tags_list
     return osm_features
 
 def get_lat_lon_bounds_with_sql(conn, distance_km):
-    """
-    Calculates latitude and longitude bounds using SQL based on center coordinates in the database.
 
-    Args:
-        conn: Database connection object.
-        location_id (str or int): Identifier for the location in the database.
-        distance_km (float): Distance in kilometers.
-
-    Returns:
-        tuple: A tuple containing the minimum and maximum latitude and longitude values
-               (min_lat, max_lat, min_lon, max_lon).
-    """
     query = f"""
     SELECT
         geography,
@@ -351,6 +340,18 @@ def get_lat_lon_bounds_with_sql(conn, distance_km):
     """
     result = pd.read_sql(query, conn)  # Execute the query and get the result
     return result
+
+def get_dist_to_closest_node_from_location(conn, center_lat, center_lon, tags_list, distance_km=1):
+
+    query = f"""
+    SELECT MIN(ST_Distance_Sphere(POINT({center_lat}, {center_lon}), POINT(`lat`, `long`)) / 1000) AS min_distance_km
+FROM osm_nodes
+WHERE { ' OR '.join(["tags LIKE '%" + key + "%'" for key in tags_list]) }
+    """
+    # Execute the query and store the result in a DataFrame
+    min_distance_km = pd.read_sql(query, conn)
+
+    return min_distance_km
 
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
